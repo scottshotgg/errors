@@ -22,23 +22,6 @@ type (
 	Entries []Entry
 )
 
-func (s Stack) Cut() Stack {
-	if s == nil {
-		return nil
-	}
-
-	var pcs [1]uintptr
-	runtime.Callers(3, pcs[:])
-
-	for i := range s {
-		if uintptr(s[i]) == pcs[0] {
-			return s[:i]
-		}
-	}
-
-	return s
-}
-
 func (e Entry) String() string {
 	return fmt.Sprintf("%s:%s:%d",
 		e.File,

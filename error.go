@@ -42,14 +42,32 @@ func (g *Error) Because(fn interface{}, err error) *Error {
 	return g
 }
 
-func (e *Error) Cut() *Error {
-	if e == nil {
+// func (e *Error) Cut() *Error {
+// 	if e == nil {
+// 		return nil
+// 	}
+
+// 	e.frames = e.Stack().Cut()
+
+// 	return e
+// }
+
+func (g *Error) Cut() *Error {
+	if g == nil {
 		return nil
 	}
 
-	e.frames = e.Stack().Cut()
+	var pcs [1]uintptr
+	runtime.Callers(3, pcs[:])
 
-	return e
+	for i := range g.frames {
+		if uintptr(g.frames[i]) == pcs[0] {
+			g.frames = g.frames[:i]
+			break
+		}
+	}
+
+	return g
 }
 
 func (g *Error) Error() string {
