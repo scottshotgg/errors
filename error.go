@@ -7,6 +7,10 @@ import (
 	"github.com/pkg/errors"
 )
 
+const (
+	defaultStackDepth = 32
+)
+
 // Either this of a list of errors instead of frames
 
 // TODO: possibly try using runtime.Frame instead
@@ -30,6 +34,10 @@ func NewBecause(err error, causeFn interface{}, causeErr error) *Error {
 }
 
 func (g *Error) Because(fn interface{}, err error) *Error {
+	if g == nil {
+		return nil
+	}
+
 	var ptr = runtime.FuncForPC(reflect.ValueOf(fn).Pointer())
 
 	g.frames = append([]errors.Frame{errors.Frame(ptr.Entry() + 1)}, g.frames...)
@@ -71,14 +79,14 @@ func (g *Error) Cut() *Error {
 }
 
 func (g *Error) Error() string {
+	if g == nil || g.err == nil {
+		return "<nil>"
+	}
+
 	return g.err.Error()
 }
 
 func (g *Error) Cause() *Cause {
-	if g == nil {
-		return nil
-	}
-
 	return g.cause
 }
 
@@ -104,9 +112,10 @@ func (g *Error) Trace() *Error {
 }
 
 func callers() Stack {
-	const depth = 32
-	var pcs [depth]uintptr
-	n := runtime.Callers(3, pcs[:])
+	var (
+		pcs [defaultStackDepth]uintptr
+		n   = runtime.Callers(3, pcs[:])
+	)
 
 	return toStack(pcs[:n])
 }

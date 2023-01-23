@@ -9,6 +9,10 @@ type Cause struct {
 }
 
 func (c *Cause) Error() string {
+	if c == nil || c.err == nil {
+		return "<nil>"
+	}
+
 	return c.err.Error()
 }
 
