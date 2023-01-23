@@ -87,6 +87,10 @@ func (g *Error) Error() string {
 }
 
 func (g *Error) Cause() *Cause {
+	if g == nil {
+		return nil
+	}
+
 	return g.cause
 }
 
