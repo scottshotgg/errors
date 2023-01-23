@@ -17,5 +17,9 @@ func (c *Cause) Error() string {
 }
 
 func (c *Cause) Name() string {
+	if c == nil {
+		return ""
+	}
+
 	return c.name
 }

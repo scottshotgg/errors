@@ -42,6 +42,10 @@ func (es Entries) String() string {
 
 // TODO: use runtime.Frame here instead
 func (s Stack) Entries() Entries {
+	if s == nil {
+		return nil
+	}
+
 	var (
 		frames  = []errors.Frame(s)
 		entries = make([]Entry, len(frames))

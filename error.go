@@ -80,10 +80,18 @@ func (g *Error) Cut() *Error {
 
 func (g *Error) Error() string {
 	if g == nil || g.err == nil {
-		return "<nil>"
+		return ""
 	}
 
 	return g.err.Error()
+}
+
+func (g *Error) ToError() error {
+	if g == nil {
+		return nil
+	}
+
+	return g
 }
 
 func (g *Error) Cause() *Cause {
@@ -95,14 +103,26 @@ func (g *Error) Cause() *Cause {
 }
 
 func (g *Error) Stack() Stack {
+	if g == nil {
+		return nil
+	}
+
 	return g.frames
 }
 
 func (g *Error) StackTrace() errors.StackTrace {
+	if g == nil {
+		return nil
+	}
+
 	return errors.StackTrace(g.frames)
 }
 
 func (g *Error) Trace() *Error {
+	if g == nil {
+		return nil
+	}
+
 	var (
 		pcs [1]uintptr
 		n   = runtime.Callers(3, pcs[:])

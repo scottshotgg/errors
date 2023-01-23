@@ -3,6 +3,7 @@ package logging
 import (
 	"context"
 	"errors"
+	"fmt"
 	"time"
 
 	pkgerrors "github.com/scottshotgg/errors"
@@ -87,9 +88,15 @@ func (g *GRPCLogger) fields(start time.Time, err error, opts ...Option) []zap.Fi
 			zap.String("duration", time.Since(start).String()),
 			zap.Int("status.code", int(code)),
 			zap.String("status.code.desc", code.String()),
-			zap.String("status.message", st.Message()),
 		}
 	)
+
+	var msg = st.Message()
+	if msg != "" {
+		fields = append(fields,
+			zap.String("status.message", st.Message()),
+		)
+	}
 
 	// If there are details then append those
 	if len(st.Details()) > 0 {
@@ -104,8 +111,15 @@ func (g *GRPCLogger) fields(start time.Time, err error, opts ...Option) []zap.Fi
 
 	// If the error is non-nil then apply the error fields
 	if err != nil {
+		fmt.Printf("ERROR: %#T %#v\n", err, err)
+
 		var pkgErr, ok = err.(*pkgerrors.Error)
 		if !ok {
+			return fields
+		}
+
+		if pkgErr == nil {
+			fmt.Println("returning fields")
 			return fields
 		}
 
@@ -124,11 +138,15 @@ func (g *GRPCLogger) fields(start time.Time, err error, opts ...Option) []zap.Fi
 		}
 
 		if !g.disableStackTrace {
+			var stack = pkgErr.Stack()
+
 			// Append the stacktrace
-			fields = append(fields,
-				zap.Any("stacktrace", pkgErr.Stack().Entries()),
-				// zap.String("stacktrace", pkgErr.StackString()),
-			)
+			if stack != nil {
+				fields = append(fields,
+					zap.Any("stacktrace", stack.Entries()),
+					// zap.String("stacktrace", pkgErr.StackString()),
+				)
+			}
 		}
 	}
 
