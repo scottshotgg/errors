@@ -3,7 +3,6 @@ package logging
 import (
 	"context"
 	"errors"
-	"fmt"
 	"time"
 
 	pkgerrors "github.com/scottshotgg/errors"
@@ -111,15 +110,12 @@ func (g *GRPCLogger) fields(start time.Time, err error, opts ...Option) []zap.Fi
 
 	// If the error is non-nil then apply the error fields
 	if err != nil {
-		fmt.Printf("ERROR: %#T %#v\n", err, err)
-
 		var pkgErr, ok = err.(*pkgerrors.Error)
 		if !ok {
 			return fields
 		}
 
 		if pkgErr == nil {
-			fmt.Println("returning fields")
 			return fields
 		}
 
