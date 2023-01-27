@@ -86,12 +86,29 @@ func (g *Error) Error() string {
 	return g.err.Error()
 }
 
-func (g *Error) ToError() error {
-	if g == nil {
+func (g *Error) IsNil() bool {
+	return g == nil
+}
+
+func (g *Error) Is(target error) bool {
+	if target == nil && g == nil {
+		return true
+	}
+
+	var tgt, ok = target.(*Error)
+	if !ok {
+		return false
+	}
+
+	return tgt.err == g.err && tgt.cause == g.cause
+}
+
+func (g *Error) Err() error {
+	if g.err == nil {
 		return nil
 	}
 
-	return g
+	return g.err
 }
 
 func (g *Error) Cause() *Cause {
