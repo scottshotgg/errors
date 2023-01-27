@@ -1,25 +1,9 @@
 package errors
 
-import "runtime"
+type Cause interface {
+	error
 
-type Cause struct {
-	name  string
-	err   error
-	value *runtime.Func
-}
+	Name() string
 
-func (c *Cause) Error() string {
-	if c == nil || c.err == nil {
-		return "<nil>"
-	}
-
-	return c.err.Error()
-}
-
-func (c *Cause) Name() string {
-	if c == nil {
-		return ""
-	}
-
-	return c.name
+	// Could have multiple reasons here?
 }

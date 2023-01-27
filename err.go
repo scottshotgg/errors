@@ -1,13 +1,15 @@
 package errors
 
 import (
+	"fmt"
 	"reflect"
 	"runtime"
 
-	"github.com/pkg/errors"
+	pkgerrors "github.com/pkg/errors"
 )
 
 const (
+	// TODO: fix this default
 	defaultStackDepth uint8 = 32
 )
 
@@ -15,17 +17,30 @@ const (
 
 // TODO: possibly try using runtime.Frame instead
 
+// Err implements Error
 var _ Error = (*Err)(nil)
 
 type Err struct {
 	err error
 	// TODO: might want to make the Cause a non-pointer so that if people do things like err.Cause().Error() it doesn't panic
-	cause  *Cause
+	// TODO: might want to change the verbase here to Reasons, make it an array
+	// that way you can just tag things along the way that you want to keep
+	cause  Cause
 	frames Stack
 	// stackDepth uint8
 }
 
 func New(err error) *Err {
+	if err == nil {
+		return nil
+	}
+
+	// TODO: return what we already have?
+	// var e, ok = err.(*Err)
+	// if ok {
+	// 	return e
+	// }
+
 	return &Err{
 		err:    err,
 		frames: callers(),
@@ -39,24 +54,20 @@ func New(err error) *Err {
 // 	return e
 // }
 
-func NewBecause(err error, causeFn interface{}, causeErr error) *Err {
+func NewBecause(err error, causeFn interface{}, causeErr error) Error {
 	return New(err).
 		Because(causeFn, causeErr)
 }
 
-func (e *Err) Because(fn interface{}, err error) *Err {
+func (e *Err) Because(fn interface{}, err error) Error {
 	if e == nil {
 		return nil
 	}
 
 	var ptr = runtime.FuncForPC(reflect.ValueOf(fn).Pointer())
 
-	e.frames = append([]errors.Frame{errors.Frame(ptr.Entry() + 1)}, e.frames...)
-	e.cause = &Cause{
-		name:  ptr.Name(),
-		err:   err,
-		value: ptr,
-	}
+	e.frames = append([]pkgerrors.Frame{pkgerrors.Frame(ptr.Entry() + 1)}, e.frames...)
+	e.cause = NewReason(ptr.Name(), err, ptr)
 
 	return e
 }
@@ -71,7 +82,7 @@ func (e *Err) Because(fn interface{}, err error) *Err {
 // 	return e
 // }
 
-func (e *Err) Cut() *Err {
+func (e *Err) Cut() Error {
 	if e == nil {
 		return nil
 	}
@@ -89,11 +100,17 @@ func (e *Err) Cut() *Err {
 	return e
 }
 
+func (e *Err) String() string {
+	// TODO: make this more verbose
+	return "TODO: make this more verbose"
+}
+
 func (e *Err) Error() string {
 	if e == nil || e.err == nil {
 		return ""
 	}
 
+	// TODO: expand this, make it more verbose
 	return e.err.Error()
 }
 
@@ -101,22 +118,29 @@ func (e *Err) IsNil() bool {
 	return e == nil
 }
 
+// TODO: think about this functionality
 func (e *Err) Is(err error) bool {
+	fmt.Println("running is func")
 	if err == nil && e == nil {
+		fmt.Println("both nil?")
 		return true
 	}
 
-	var target, ok = err.(*Err)
+	var _, ok = err.(*Err)
 	if !ok {
+		fmt.Println("not ok?")
 		return false
 	}
 
-	return target.err == e.err && target.cause == e.cause
+	fmt.Println("compare?")
+
+	return true
+	// return target.err == e.err && target.cause == e.cause
 }
 
 func (e *Err) As(target any) bool {
 	// TODO: expand on this later
-	return errors.As(e.err, target)
+	return pkgerrors.As(e.err, target)
 }
 
 func (e *Err) Err() error {
@@ -127,7 +151,7 @@ func (e *Err) Err() error {
 	return e.err
 }
 
-func (e *Err) Cause() *Cause {
+func (e *Err) Cause() Cause {
 	if e == nil {
 		return nil
 	}
@@ -143,15 +167,15 @@ func (e *Err) Stack() Stack {
 	return e.frames
 }
 
-func (e *Err) StackTrace() errors.StackTrace {
+func (e *Err) StackTrace() pkgerrors.StackTrace {
 	if e == nil {
 		return nil
 	}
 
-	return errors.StackTrace(e.frames)
+	return pkgerrors.StackTrace(e.frames)
 }
 
-func (e *Err) Trace() *Err {
+func (e *Err) Trace() Error {
 	if e == nil {
 		return nil
 	}
@@ -162,7 +186,7 @@ func (e *Err) Trace() *Err {
 	)
 
 	if n > 0 {
-		e.frames = append(e.frames, errors.Frame(pcs[0]))
+		e.frames = append(e.frames, pkgerrors.Frame(pcs[0]))
 	}
 
 	return e
@@ -178,10 +202,10 @@ func callers() Stack {
 }
 
 func toStack(pcs []uintptr) Stack {
-	var frames = make([]errors.Frame, len(pcs))
+	var frames = make([]pkgerrors.Frame, len(pcs))
 
 	for i := range pcs {
-		frames[i] = errors.Frame(pcs[i])
+		frames[i] = pkgerrors.Frame(pcs[i])
 	}
 
 	return Stack(frames)
@@ -191,8 +215,8 @@ func toStack(pcs []uintptr) Stack {
 // 	return fmt.Sprintf("%s%+v", e.err, e.StackTrace(true))
 // }
 
-// func (e *Err) StackTrace(short bool) errors.StackTrace {
-// 	var frames []errors.Frame
+// func (e *Err) StackTrace(short bool) pkgerrors.StackTrace {
+// 	var frames []pkgerrors.Frame
 // 	if short {
 // 		for _, frame := range e.frames {
 // 			var rf = runtime.FuncForPC(uintptr(frame))
