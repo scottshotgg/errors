@@ -15,7 +15,7 @@ func UnaryGRPC(logger *zap.Logger) grpc.UnaryServerInterceptor {
 		// We will not check the error here until later
 		var (
 			resp, err  = handler(ctx, req)
-			pkgErr, ok = err.(*errors.Error)
+			pkgErr, ok = err.(*errors.Err)
 		)
 
 		// TODO: figure this out
