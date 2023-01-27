@@ -110,7 +110,7 @@ func (g *GRPCLogger) fields(start time.Time, err error, opts ...Option) []zap.Fi
 
 	// If the error is non-nil then apply the error fields
 	if err != nil {
-		var pkgErr, ok = err.(*pkgerrors.Error)
+		var pkgErr, ok = err.(*pkgerrors.Err)
 		if !ok {
 			return fields
 		}
