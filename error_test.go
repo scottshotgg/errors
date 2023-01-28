@@ -18,12 +18,18 @@ func TestErrors(t *testing.T) {
 
 	var se = errors.FromError(err)
 	fmt.Println("se:", se)
-	fmt.Println(se.Cut().Stack())
+	// fmt.Println(se.Cut(errors.Up).Stack())
+	// fmt.Println(se.Cut(errors.Down).Stack())
 
 	// fmt.Println(err.Cut().StackTrace())
 }
 
 func someFunc() errors.Error {
+	var err1 = someOtherFunc1()
+	fmt.Println("up:", err1.Cut(errors.Up).Stack())
+	var err2 = someOtherFunc1()
+	fmt.Println("down:", err2.Cut(errors.Down).Stack())
+
 	return someOtherFunc1()
 }
 

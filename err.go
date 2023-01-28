@@ -82,17 +82,26 @@ func (e *Err) Because(fn interface{}, err error) Error {
 // 	return e
 // }
 
-func (e *Err) Cut() Error {
-	if e == nil {
+func (e *Err) Cut(dir CutDirection) Error {
+	if e == nil || dir > Down {
 		return nil
 	}
 
-	var pcs [1]uintptr
-	runtime.Callers(3, pcs[:])
+	var pc, _, _, ok = runtime.Caller(2)
+	if !ok {
+		return e
+	}
 
 	for i := range e.frames {
-		if uintptr(e.frames[i]) == pcs[0] {
-			e.frames = e.frames[:i]
+		if uintptr(e.frames[i]) == pc+1 {
+			switch dir {
+			case Up:
+				e.frames = e.frames[i-1:]
+
+			case Down:
+				e.frames = e.frames[:i]
+			}
+
 			break
 		}
 	}

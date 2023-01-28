@@ -1,7 +1,17 @@
 package errors
 
 import (
+	"runtime"
+
 	"github.com/pkg/errors"
+)
+
+type CutDirection uint
+
+const (
+	_ CutDirection = iota
+	Up
+	Down
 )
 
 type Error interface {
@@ -9,12 +19,12 @@ type Error interface {
 	error
 
 	Because(fn interface{}, err error) Error
-	Cut() Error
+	Cut(dir CutDirection) Error
 	IsNil() bool
 	Cause() Cause
 	Stack() Stack
-	StackTrace() errors.StackTrace
-	Trace() Error
+	// StackTrace() errors.StackTrace
+	// Trace() Error
 
 	Is(err error) bool
 	As(target any) bool
@@ -42,3 +52,39 @@ func FromError(err error) Error {
 // func Chain(err error) Error {
 // 	return FromError(err).Append()
 // }
+
+func Cut(e *Err, dir CutDirection) Error {
+	// var pcs [1]uintptr
+	// runtime.Callers(3, pcs[:])
+	var pc, _, _, ok = runtime.Caller(2)
+	if !ok {
+		return e
+	}
+
+	if e == nil {
+		return nil
+	}
+
+	var frames Stack
+	switch dir {
+	case Up:
+		for i := range e.frames {
+			if uintptr(e.frames[i]) == pc {
+				e.frames = e.frames[:i]
+			}
+		}
+
+	case Down:
+		for i := range e.frames {
+			if uintptr(e.frames[i]) == pc {
+				e.frames = e.frames[i:]
+			}
+		}
+	}
+
+	return &Err{
+		err:    e.err,
+		cause:  e.cause,
+		frames: frames,
+	}
+}
