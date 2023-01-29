@@ -18,7 +18,7 @@ func TestErrors(t *testing.T) {
 
 	var se = errors.FromError(err).Cut(errors.Down)
 	fmt.Println("se:", se)
-	fmt.Println("se:", se.Stack())
+	fmt.Println("se.stack:", se.Stack())
 	// fmt.Println(se.Cut(errors.Up).Stack())
 	// fmt.Println(se.Cut(errors.Down).Stack())
 

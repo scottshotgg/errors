@@ -1,15 +1,11 @@
 package errors
 
-import (
-	"runtime"
-)
-
 // Reason implements Cause
 var _ Cause = (*Reason)(nil)
 
-func NewReason(err error, fn *runtime.Func) *Reason {
+func NewReason(err error, name string) *Reason {
 	return &Reason{
-		name: fn.Name(),
+		name: name,
 		err:  err,
 		// value: fn,
 	}

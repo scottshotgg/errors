@@ -4,6 +4,7 @@ import (
 	"errors"
 	"reflect"
 	"runtime"
+	"strings"
 
 	pkgerrors "github.com/pkg/errors"
 )
@@ -87,7 +88,9 @@ func (e *Err) Because(fn interface{}, err error) Error {
 		},
 	}, e.stack...)
 
-	e.cause = NewReason(err, ptr)
+	var split = strings.Split(ptr.Name(), "/")
+
+	e.cause = NewReason(err, split[len(split)-1])
 	// e.causes = []Cause{
 	// NewReason(err, ptr),
 	// }
@@ -210,17 +213,12 @@ func (e *Err) Stack() Stack {
 func callers() Stack {
 	var (
 		pcs [defaultStackDepth]uintptr
-		// frames [defaultStackDepth]Frame]
-		// n = runtime.Callers(3, pcs[:])
+		i   int
+
 		// TODO: not sure if this should actually be n, need to look into it
-		// frames = make([]Frame, n)
-		frames []Frame
-	)
-
-	runtime.Callers(3, pcs[:])
-
-	var (
-		r = runtime.CallersFrames(pcs[:])
+		n      = runtime.Callers(3, pcs[:])
+		frames = make([]Frame, n-1)
+		r      = runtime.CallersFrames(pcs[:n])
 	)
 
 	for {
@@ -237,7 +235,7 @@ func callers() Stack {
 		// 	continue
 		// }
 
-		frames = append(frames, Frame{
+		frames[i] = Frame{
 			pc: frame.PC,
 			// TODO: unfortunately - this Function is too long and Func is nil for inlined functions ...
 			// Figure this out latersS
@@ -245,7 +243,9 @@ func callers() Stack {
 			// 	Name: frame.Function,
 			// 	Line: frame.Line,
 			// },
-		})
+		}
+
+		i++
 	}
 
 	return frames
