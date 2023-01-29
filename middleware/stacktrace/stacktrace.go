@@ -20,7 +20,7 @@ func UnaryGRPC(logger *zap.Logger) grpc.UnaryServerInterceptor {
 
 		// TODO: figure this out
 		if ok {
-			metadata.AppendToOutgoingContext(ctx, "stacktrace", pkgErr.Stack().Entries().String())
+			metadata.AppendToOutgoingContext(ctx, "stacktrace", pkgErr.Stack().String())
 		}
 
 		// Pack stack trace into metadata

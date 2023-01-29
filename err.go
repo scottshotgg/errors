@@ -1,7 +1,7 @@
 package errors
 
 import (
-	"fmt"
+	"errors"
 	"reflect"
 	"runtime"
 
@@ -10,7 +10,7 @@ import (
 
 const (
 	// TODO: fix this default
-	defaultStackDepth uint8 = 32
+	defaultStackDepth uint8 = 16
 )
 
 // Either this of a list of errors instead of frames
@@ -25,8 +25,9 @@ type Err struct {
 	// TODO: might want to make the Cause a non-pointer so that if people do things like err.Cause().Error() it doesn't panic
 	// TODO: might want to change the verbase here to Reasons, make it an array
 	// that way you can just tag things along the way that you want to keep
-	cause  Cause
-	frames Stack
+	cause Cause
+	// causes []Cause
+	stack Stack
 	// stackDepth uint8
 }
 
@@ -42,8 +43,8 @@ func New(err error) *Err {
 	// }
 
 	return &Err{
-		err:    err,
-		frames: callers(),
+		err:   err,
+		stack: callers(),
 		// stackDepth: defaultStackDepth,
 	}
 }
@@ -64,10 +65,32 @@ func (e *Err) Because(fn interface{}, err error) Error {
 		return nil
 	}
 
-	var ptr = runtime.FuncForPC(reflect.ValueOf(fn).Pointer())
+	var rv = reflect.ValueOf(fn)
+	if rv.Kind() != reflect.Func {
+		return &Err{
+			err: errors.New("causeFn must be 'reflect.Func'"),
+		}
+	}
 
-	e.frames = append([]pkgerrors.Frame{pkgerrors.Frame(ptr.Entry() + 1)}, e.frames...)
-	e.cause = NewReason(ptr.Name(), err, ptr)
+	var ptr = runtime.FuncForPC(rv.Pointer())
+	// var entry = ptr.Entry()
+	// _, line := ptr.FileLine(entry)
+
+	e.stack = append([]Frame{
+		{
+			pc: ptr.Entry(),
+			// pc: entry,
+			// e: &Entry{
+			// 	Name: ptr.Name(),
+			// 	Line: line,
+			// },
+		},
+	}, e.stack...)
+
+	e.cause = NewReason(err, ptr)
+	// e.causes = []Cause{
+	// NewReason(err, ptr),
+	// }
 
 	return e
 }
@@ -77,34 +100,13 @@ func (e *Err) Because(fn interface{}, err error) Error {
 // 		return nil
 // 	}
 
-// 	e.frames = e.Stack().Cut()
+// 	e.stack = e.Stack().Cut()
 
 // 	return e
 // }
 
 func (e *Err) Cut(dir CutDirection) Error {
-	if e == nil || dir > Down {
-		return nil
-	}
-
-	var pc, _, _, ok = runtime.Caller(2)
-	if !ok {
-		return e
-	}
-
-	for i := range e.frames {
-		if uintptr(e.frames[i]) == pc+1 {
-			switch dir {
-			case Up:
-				e.frames = e.frames[i-1:]
-
-			case Down:
-				e.frames = e.frames[:i]
-			}
-
-			break
-		}
-	}
+	e.stack = e.stack.CutAt(3, dir)
 
 	return e
 }
@@ -129,19 +131,14 @@ func (e *Err) IsNil() bool {
 
 // TODO: think about this functionality
 func (e *Err) Is(err error) bool {
-	fmt.Println("running is func")
 	if err == nil && e == nil {
-		fmt.Println("both nil?")
 		return true
 	}
 
 	var _, ok = err.(*Err)
 	if !ok {
-		fmt.Println("not ok?")
 		return false
 	}
-
-	fmt.Println("compare?")
 
 	return true
 	// return target.err == e.err && target.cause == e.cause
@@ -168,56 +165,90 @@ func (e *Err) Cause() Cause {
 	return e.cause
 }
 
+// func (e *Err) Causes() []Cause {
+// 	if e == nil {
+// 		return nil
+// 	}
+
+// 	return e.causes
+// }
+
 func (e *Err) Stack() Stack {
 	if e == nil {
 		return nil
 	}
 
-	return e.frames
+	return e.stack
 }
 
-func (e *Err) StackTrace() pkgerrors.StackTrace {
-	if e == nil {
-		return nil
-	}
+// func (e *Err) StackTrace() pkgerrors.StackTrace {
+// 	if e == nil {
+// 		return nil
+// 	}
 
-	return pkgerrors.StackTrace(e.frames)
-}
+// 	return pkgerrors.StackTrace(e.stack)
+// }
 
-func (e *Err) Trace() Error {
-	if e == nil {
-		return nil
-	}
+// func (e *Err) Trace() Error {
+// 	if e == nil {
+// 		return nil
+// 	}
 
-	var (
-		pcs [1]uintptr
-		n   = runtime.Callers(3, pcs[:])
-	)
+// 	var (
+// 		pc, _, _, ok = runtime.Caller(2)
+// 	)
 
-	if n > 0 {
-		e.frames = append(e.frames, pkgerrors.Frame(pcs[0]))
-	}
+// 	if !ok {
+// 		return e
+// 	}
 
-	return e
-}
+// 	e.stack = append(e.stack, pkgerrors.Frame(pc))
+
+// 	return e
+// }
 
 func callers() Stack {
 	var (
 		pcs [defaultStackDepth]uintptr
-		n   = runtime.Callers(3, pcs[:])
+		// frames [defaultStackDepth]Frame]
+		// n = runtime.Callers(3, pcs[:])
+		// TODO: not sure if this should actually be n, need to look into it
+		// frames = make([]Frame, n)
+		frames []Frame
 	)
 
-	return toStack(pcs[:n])
-}
+	runtime.Callers(3, pcs[:])
 
-func toStack(pcs []uintptr) Stack {
-	var frames = make([]pkgerrors.Frame, len(pcs))
+	var (
+		r = runtime.CallersFrames(pcs[:])
+	)
 
-	for i := range pcs {
-		frames[i] = pkgerrors.Frame(pcs[i])
+	for {
+		var frame, more = r.Next()
+		if !more {
+			break
+		}
+
+		// if frame.Func == nil {
+		// 	frames = append(frames, Frame{
+		// 		pc: frame.PC,
+		// 	})
+
+		// 	continue
+		// }
+
+		frames = append(frames, Frame{
+			pc: frame.PC,
+			// TODO: unfortunately - this Function is too long and Func is nil for inlined functions ...
+			// Figure this out latersS
+			// e: &Entry{
+			// 	Name: frame.Function,
+			// 	Line: frame.Line,
+			// },
+		})
 	}
 
-	return Stack(frames)
+	return frames
 }
 
 // func (g Err) Verbose() string {
@@ -227,7 +258,7 @@ func toStack(pcs []uintptr) Stack {
 // func (e *Err) StackTrace(short bool) pkgerrors.StackTrace {
 // 	var frames []pkgerrors.Frame
 // 	if short {
-// 		for _, frame := range e.frames {
+// 		for _, frame := range e.stack {
 // 			var rf = runtime.FuncForPC(uintptr(frame))
 
 // 			file, line := rf.FileLine(uintptr(frame))
@@ -243,13 +274,13 @@ func toStack(pcs []uintptr) Stack {
 // 		}
 // 	}
 
-// 	return e.frames
+// 	return e.stack
 // }
 
 // func (e *Err) StackString() string {
-// 	var lines = make([]string, len(e.frames))
+// 	var lines = make([]string, len(e.stack))
 
-// 	for i, frame := range e.frames {
+// 	for i, frame := range e.stack {
 // 		var rf = runtime.FuncForPC(uintptr(frame))
 
 // 		file, _ := rf.FileLine(uintptr(frame))

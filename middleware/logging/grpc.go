@@ -139,7 +139,7 @@ func (g *GRPCLogger) fields(start time.Time, err error, opts ...Option) []zap.Fi
 			// Append the stacktrace
 			if stack != nil {
 				fields = append(fields,
-					zap.Any("stacktrace", stack.Entries()),
+					zap.Any("stacktrace", stack.Strings()),
 					// zap.String("stacktrace", pkgErr.StackString()),
 				)
 			}

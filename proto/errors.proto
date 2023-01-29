@@ -1,0 +1,20 @@
+syntax = "proto3";
+
+package errors;
+
+option go_package = "github.com/scottshotgg/errors";
+
+message Error {
+  Cause cause = 1;
+  repeated Frame stack = 2;
+}
+
+message Cause {
+  string name = 1;
+  string error = 2;
+}
+
+message Frame {
+  string name = 1;
+  int32 line = 2;
+}
