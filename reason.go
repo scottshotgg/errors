@@ -1,29 +1,25 @@
 package errors
 
-import (
-	"runtime"
-)
-
 // Reason implements Cause
 var _ Cause = (*Reason)(nil)
 
-func NewReason(name string, err error, value *runtime.Func) *Reason {
+func NewReason(err error, name string) *Reason {
 	return &Reason{
-		name:  name,
-		err:   err,
-		value: value,
+		name: name,
+		err:  err,
+		// value: fn,
 	}
 }
 
 type Reason struct {
-	name  string
-	err   error
-	value *runtime.Func
+	name string
+	err  error
+	// value *runtime.Func
 }
 
 func (c *Reason) Error() string {
 	if c == nil || c.err == nil {
-		return "<nil>"
+		return ""
 	}
 
 	return c.err.Error()
