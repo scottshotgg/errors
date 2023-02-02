@@ -30,6 +30,8 @@ type Err struct {
 	// causes []Cause
 	stack Stack
 	// stackDepth uint8
+
+	details map[string]any
 }
 
 func New(err error) *Err {
@@ -44,8 +46,9 @@ func New(err error) *Err {
 	// }
 
 	return &Err{
-		err:   err,
-		stack: callers(),
+		err:     err,
+		stack:   callers(),
+		details: map[string]any{},
 		// stackDepth: defaultStackDepth,
 	}
 }
@@ -112,6 +115,10 @@ func (e *Err) Cut(dir CutDirection) Error {
 	e.stack = e.stack.CutAt(3, dir)
 
 	return e
+}
+
+func (e *Err) Details() map[string]any {
+	return e.details
 }
 
 func (e *Err) String() string {

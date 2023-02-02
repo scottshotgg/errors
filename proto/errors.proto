@@ -5,8 +5,9 @@ package errors;
 option go_package = "github.com/scottshotgg/errors";
 
 message Error {
-  Cause cause = 1;
-  repeated Frame stack = 2;
+  string error = 1;
+  Cause cause = 2;
+  repeated Frame stack = 3;
 }
 
 message Cause {

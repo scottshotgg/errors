@@ -34,15 +34,18 @@ type Error interface {
 	Because(fn interface{}, err error) Error
 	Cut(dir CutDirection) Error
 	IsNil() bool
+
 	Err() error
 	Cause() Cause
-	// Causes() []Cause
 	Stack() Stack
-	// StackTrace() errors.StackTrace
-	// Trace() Error
+	Details() map[string]any
 
 	Is(err error) bool
 	As(target any) bool
+
+	// StackTrace() errors.StackTrace
+	// Trace() Error
+	// Causes() []Cause
 
 	// TODO: think about a FromStatus(status.Status) Error function
 }
