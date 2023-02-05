@@ -6,8 +6,7 @@ import (
 	"runtime"
 	"strconv"
 	"strings"
-
-	errors_pb "github.com/scottshotgg/errors/proto"
+	// errors_pb "github.com/scottshotgg/errors/proto"
 )
 
 // var wd string
@@ -179,45 +178,45 @@ func (s Stack) CutAt(skip int, dir CutDirection) Stack {
 	return s
 }
 
-func StackFromPB(frs []*errors_pb.Frame) Stack {
-	var frames = make([]Frame, len(frs))
+// func StackFromPB(frs []*errors_pb.Frame) Stack {
+// 	var frames = make([]Frame, len(frs))
 
-	for i := range frs {
-		frames[i] = FrameFromPB(frs[i])
-	}
+// 	for i := range frs {
+// 		frames[i] = FrameFromPB(frs[i])
+// 	}
 
-	return frames
-}
+// 	return frames
+// }
 
-func FrameFromPB(fr *errors_pb.Frame) Frame {
-	return Frame{
-		e: &Entry{
-			Name: fr.Name,
-			Line: int(fr.Line),
-		},
-	}
-}
+// func FrameFromPB(fr *errors_pb.Frame) Frame {
+// 	return Frame{
+// 		e: &Entry{
+// 			Name: fr.Name,
+// 			Line: int(fr.Line),
+// 		},
+// 	}
+// }
 
-func (s Stack) ToPB() []*errors_pb.Frame {
-	var frames = make([]*errors_pb.Frame, len(s))
+// func (s Stack) ToPB() []*errors_pb.Frame {
+// 	var frames = make([]*errors_pb.Frame, len(s))
 
-	for i := range s {
-		frames[i] = s[i].ToPB()
-	}
+// 	for i := range s {
+// 		frames[i] = s[i].ToPB()
+// 	}
 
-	return frames
-}
+// 	return frames
+// }
 
-func (f Frame) ToPB() *errors_pb.Frame {
-	if f.e == nil {
-		f.Resolve()
-	}
+// func (f Frame) ToPB() *errors_pb.Frame {
+// 	if f.e == nil {
+// 		f.Resolve()
+// 	}
 
-	return &errors_pb.Frame{
-		Name: f.e.Name,
-		Line: int32(f.e.Line),
-	}
-}
+// 	return &errors_pb.Frame{
+// 		Name: f.e.Name,
+// 		Line: int32(f.e.Line),
+// 	}
+// }
 
 // TODO: these should probably be built at some point be we don't
 // need them right now

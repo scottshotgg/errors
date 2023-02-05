@@ -24,18 +24,18 @@ func TestErrors(t *testing.T) {
 
 	// se.Stack().Frames()
 
-	var st = errors.ToStatus(se, errors.WithStack, errors.WithCause)
-	fmt.Println("status:", st)
-	fmt.Println("status.Details():", st.Details())
+	// var st = errors.ToStatus(se, errors.WithStack, errors.WithCause)
+	// fmt.Println("status:", st)
+	// fmt.Println("status.Details():", st.Details())
 
-	e2, err := errors.FromStatus(st)
-	if err != nil {
-		panic(err)
-	}
+	// e2, err := errors.FromStatus(st)
+	// if err != nil {
+	// 	panic(err)
+	// }
 
-	fmt.Println("e2:", e2)
-	fmt.Println("e2.cause:", e2.Cause())
-	fmt.Println("e2.stack:", e2.Stack())
+	// fmt.Println("e2:", e2)
+	// fmt.Println("e2.cause:", e2.Cause())
+	// fmt.Println("e2.stack:", e2.Stack())
 }
 
 func someFunc() errors.Error {
