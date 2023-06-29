@@ -53,6 +53,14 @@ func New(err error) *Err {
 	}
 }
 
+func NewWithDetails(err error, details map[string]any) Err {
+	return Err{
+		err:     err,
+		stack:   callers(),
+		details: details,
+	}
+}
+
 // func (e *Err) WithStackDepth(sd uint8) *Err {
 // 	e.stackDepth = sd
 
